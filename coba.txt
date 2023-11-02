@@ -1,0 +1,96 @@
+<head>
+<title>SENIMAN</title>
+<script type="text/javascript" src="jquery.min.js"></script>
+<script type="text/javascript" src="highcharts.js"></script>
+</head>
+<body>
+
+// Buat Koneksi Database
+ 
+<?php
+    $host = 'localhost';
+    $user = 'root';
+    $pass = '';
+    $db = 'registerkesenian';
+
+    $conn = mysql_connect($host, $user, $pass);
+    mysql_select_db($db, $conn);
+
+// Buat Variabel untuk tahun dan namaorganisasi untuk menampilkan data berdasarkan kriteria
+ 
+    // ser get year
+    $year = isset($_GET['year']);
+    $year = !empty($_GET['year']) ? $_GET['year'] : 2014;
+
+    $categories = array('Nama Organisasi');
+
+// data series tampilan di grafik
+ 
+    $data_series = array('Kuda Lumping', 'Jaranan', 'Tari');
+
+    // set sereis
+    $series = array();
+
+    // set series
+    foreach ($data_series as $key=>$val) {
+        array_push($series, array(
+            'name'=>$val,
+            'data'=>array()
+        ));
+    }
+
+    // tampilkan data dari tabel seniman dengan %like artinya setiap kata yang ada didalam array diatas yaitu jaranan, kuda lumping, tari akan di select
+ 
+    foreach ($data_series as $key=>$val) {
+        $sql = 'SELECT COUNT(*) AS result FROM seniman';
+        $sql .= ' WHERE namaorga LIKE "%'.$val.'%"';
+        $sql .= ' AND berlakuawal like "%'.$year.'"';
+        $rs = mysql_query($sql);
+        $row = mysql_fetch_array($rs);
+
+        $result = $row['result'];
+
+        array_push($series[$key]['data'], (int) $result);
+    }
+?>
+<form method="get">
+    <select name="year">
+        <option value="">- pilih tahun -</option>
+
+// Untuk Action pilih berdasarkan tahun
+ 
+        <?php
+            foreach (range(2013, date('Y')) as $key=>$val) {
+                echo '<option value="'.$val.'">'.$val.'</option>';
+            }
+        ?>
+    </select>
+    <button>CEK TAHUN</button>
+</form>
+<div id="contoh" style="width: 100%; height: 500px"></div>
+<script type="text/javascript">
+
+// Tampilkan grafik berdasarkan variabel year dan category 
+ 
+$('#contoh').highcharts({
+    chart: {
+        type: 'column'
+    },
+    title: {
+        text: 'SENIMAN BERDASARKAN NAMA ORGANISASI'
+    },
+    subtitle: {
+        text: '<?php echo $year; ?>'
+    },
+    xAxis: {
+        categories: <?php echo json_encode($categories); ?>,
+        labels: {
+            rotation: 0,
+            align: 'center'
+        }
+    },
+    series: <?php echo json_encode($series); ?>
+});
+</script>
+</body>
+</html>
